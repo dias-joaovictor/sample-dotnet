@@ -6,16 +6,23 @@ public class ProductsConsumer : BackgroundService
     private readonly ILogger<ProductsConsumer> _logger;
     private readonly ConsumerConfig _consumerConfig;
 
-    public ProductsConsumer(ILogger<ProductsConsumer> logger, ConsumerConfig consumerConfig)
+    private readonly ProductService _productService;
+    
+    private readonly IConsumer<Ignore, string> _consumer;
+
+    public ProductsConsumer(ILogger<ProductsConsumer> logger, ConsumerConfig consumerConfig, ProductService productService)
     {
         _logger = logger;
         _consumerConfig = consumerConfig;
+        _productService = productService;
+        
+        _consumer = new ConsumerBuilder<Ignore, string>(_consumerConfig).Build();
+        _consumer.Subscribe(_topic);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var consumer = new ConsumerBuilder<Ignore, string>(_consumerConfig).Build();
-        consumer.Subscribe(_topic);
+        await Task.Yield();
         
         _logger.LogInformation("ProductsConsumer started consuming.");
 
@@ -23,7 +30,7 @@ public class ProductsConsumer : BackgroundService
         {
             try
             {
-                var consumeResult = consumer.Consume(stoppingToken);
+                var consumeResult = _consumer.Consume(stoppingToken);
                 var product = System.Text.Json.JsonSerializer.Deserialize<Product>(
                     consumeResult.Message.Value, 
                     new System.Text.Json.JsonSerializerOptions
@@ -32,6 +39,11 @@ public class ProductsConsumer : BackgroundService
                         }
                     );
                 _logger.LogInformation($"Received product: {product}");
+
+                if(product != null){
+                    _productService.addProduct(product);
+                }
+                
 
                 // Process the product record here
             }
@@ -43,8 +55,15 @@ public class ProductsConsumer : BackgroundService
             {
                 _logger.LogError($"Error consuming message: {ex.Message}");
             }
+            _logger.LogWarning("executing loop");
         }
 
-        consumer.Close();
+        _consumer.Close();
+    }
+
+    public override void Dispose()
+    {
+        _consumer.Dispose();
+        base.Dispose();
     }
 }

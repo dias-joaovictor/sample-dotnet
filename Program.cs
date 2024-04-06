@@ -14,34 +14,13 @@ builder.Logging.AddConsole(); // Adds logging output to the console
 builder.Logging.AddDebug();
 
 // Add Quartz
-// QuartzConfiguration.ConfigureQuartz(builder);
-builder.Services.AddQuartz(q =>
-{
-        // Register your job as follows
-    q.AddJob<SampleTask>(opts => opts.WithIdentity("SampleJob"));
-    
-    // Create a trigger for the job
-    q.AddTrigger(opts => opts
-        .ForJob("SampleJob") // reference to the SampleJob
-        .WithIdentity("SampleJob-trigger") // unique name for the trigger
-        .WithCronSchedule("0/5 * * * * ?")); // e.g., run every 5 seconds
-});
+QuartzConfiguration.ConfigureQuartz(builder);
 
-// builder.Services.AddQuartz(q =>
-// {
-//     var jobName = "SampleTask";
-//     var jobKey = new JobKey(jobName);
-//     q.AddJob<SampleTask>(opts => opts.WithIdentity(jobKey));
-//     q.AddTrigger(opts => opts
-//         .ForJob(jobKey)
-//         .WithIdentity(jobName + "-Trigger")
-//         .WithCronSchedule("0/5 * * * * ?"));
-// });
-
-// Add the Quartz hosted service which manages the job lifecycle
-builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
-
+// Add kafka configuration
 KafkaConfiguration.ConfigureKafka(builder);
+
+builder.Services.AddSingleton<ProductService>();
+
 
 var app = builder.Build();
 app.UseAuthorization();
