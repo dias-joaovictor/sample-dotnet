@@ -37,8 +37,8 @@ $RECYCLE.BIN/
 # Visual Studio
 # =========================
 # Ignoring most of the build process and temporary files
-bin/
-obj/
+**/bin/
+**/obj/
 *.log
 *.vspscc
 *_i.c

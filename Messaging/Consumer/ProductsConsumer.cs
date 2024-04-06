@@ -55,7 +55,6 @@ public class ProductsConsumer : BackgroundService
             {
                 _logger.LogError($"Error consuming message: {ex.Message}");
             }
-            _logger.LogWarning("executing loop");
         }
 
         _consumer.Close();
